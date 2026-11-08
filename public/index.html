@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Aquarium Dashboard - ตู้ปลาอัจฉริยะ</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfeff',
+              100: '#cffafe',
+              500: '#06b6d4',
+              600: '#0891b2',
+              700: '#0e7490',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Fonts: Prompt / Sarabun -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-200">
+
+  <div class="min-h-full flex flex-col sm:flex-row">
+
+    <!-- DESKTOP SIDEBAR NAVIGATION -->
+    <aside class="hidden sm:flex flex-col w-16 lg:w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 p-2 lg:p-4 shrink-0 shadow-sm">
+      <div class="flex items-center justify-center lg:justify-start space-x-3 px-1 lg:px-2 py-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20">
+          <i data-lucide="fish" class="w-6 h-6"></i>
+        </div>
+        <div class="hidden lg:block">
+          <h1 class="font-bold text-lg leading-tight tracking-tight text-slate-900 dark:text-white">Smart Aquarium</h1>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="space-y-1.5 flex-1">
+        <button onclick="switchTab('dashboard')" id="nav-desktop-dashboard" title="แดชบอร์ด" class="nav-item w-full flex items-center justify-center lg:justify-start space-x-3 px-2 lg:px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 bg-cyan-50 text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-300">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          <span class="hidden lg:inline">แดชบอร์ด (Dashboard)</span>
+        </button>
+
+        <button onclick="switchTab('alerts')" id="nav-desktop-alerts" title="การแจ้งเตือน" class="nav-item w-full flex items-center justify-center lg:justify-between px-2 lg:px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+          <div class="flex items-center justify-center lg:justify-start space-x-3">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span class="hidden lg:inline">การแจ้งเตือน (Alerts)</span>
+          </div>
+          <span id="badge-alerts-count" class="hidden lg:inline px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300 hidden">0</span>
+        </button>
+
+        <button onclick="switchTab('thresholds')" id="nav-desktop-thresholds" title="ตั้งเกณฑ์เตือน" class="nav-item w-full flex items-center justify-center lg:justify-start space-x-3 px-2 lg:px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+          <i data-lucide="gauge" class="w-5 h-5"></i>
+          <span class="hidden lg:inline">ตั้งเกณฑ์เตือน (Thresholds)</span>
+        </button>
+
+        <button onclick="switchTab('settings')" id="nav-desktop-settings" title="ตั้งค่าระบบ" class="nav-item w-full flex items-center justify-center lg:justify-start space-x-3 px-2 lg:px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+          <span class="hidden lg:inline">ตั้งค่าระบบ (Settings)</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar Status Card -->
+      <div class="hidden lg:block p-3.5 rounded-2xl bg-slate-100/80 dark:bg-slate-700/40 border border-slate-200/80 dark:border-slate-700 text-xs space-y-2">
+        <div class="flex items-center justify-between font-medium">
+          <span class="text-slate-500 dark:text-slate-400">สถานะฮาร์ดแวร์</span>
+          <span id="sidebar-hardware-status" class="flex items-center space-x-1.5 text-emerald-600 dark:text-emerald-400">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Online</span>
+          </span>
+        </div>
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+          <span>Wi-Fi RSSI</span>
+          <span id="sidebar-rssi" class="font-mono text-slate-700 dark:text-slate-200">-62 dBm</span>
+        </div>
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+          <span>ESP32 Uptime</span>
+          <span id="sidebar-uptime" class="font-mono text-slate-700 dark:text-slate-200">01:45:20</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-1 flex flex-col pb-20 sm:pb-8 min-w-0">
+
+      <!-- TOP BAR (HEADER) -->
+      <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-800/90 backdrop-blur border-b border-slate-200 dark:border-slate-700 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-xs">
+        <div class="flex items-center space-x-3">
+          <div class="sm:hidden w-8 h-8 rounded-lg bg-cyan-600 flex items-center justify-center text-white">
+            <i data-lucide="fish" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white leading-tight">ตู้ปลาอัจฉริยะ (Main Tank)</h2>
+              <span id="header-status-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                <span>ตู้ปลาปกติ</span>
+              </span>
+            </div>
+            <p id="header-updated-time" class="text-xs text-slate-500 dark:text-slate-400 flex items-center space-x-1">
+              <i data-lucide="clock" class="w-3 h-3"></i>
+              <span>อัปเดต 2 วินาทีที่แล้ว</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <!-- Web Serial Connect Button (Chrome/Edge Direct USB) -->
+          <button onclick="toggleWebSerial()" id="btn-web-serial" class="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-medium bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center space-x-1.5 transition" title="เชื่อมต่อสาย USB Serial เข้ากับ ESP32 โดยตรง">
+            <span id="web-serial-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+            <span id="web-serial-text">🔌 ต่อ USB ESP32</span>
+          </button>
+
+          <!-- Theme Toggle -->
+          <button onclick="toggleTheme()" class="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition" title="สลับธีม สว่าง/มืด">
+            <i data-lucide="sun" id="theme-icon-sun" class="w-5 h-5 hidden"></i>
+            <i data-lucide="moon" id="theme-icon-moon" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT BODY -->
+      <div class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: DASHBOARD                           -->
+        <!-- ========================================== -->
+        <section id="tab-dashboard" class="tab-content space-y-6">
+
+          <!-- 1. TOP STATUS BANNER (ตามสเปก 3 วินาที) -->
+          <div id="status-banner" class="rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between bg-emerald-500 text-white shadow-lg shadow-emerald-500/10 transition-all duration-300">
+            <div class="flex items-start sm:items-center space-x-3 sm:space-x-4 mb-3 sm:mb-0">
+              <div id="status-banner-icon-bg" class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <i data-lucide="check-circle" id="status-banner-icon" class="w-7 h-7"></i>
+              </div>
+              <div>
+                <h3 id="status-banner-title" class="text-lg sm:text-xl font-bold leading-tight">ตู้ปลาปลอดภัย ทุกค่าอยู่ในเกณฑ์ปกติ</h3>
+                <p id="status-banner-desc" class="text-xs sm:text-sm text-emerald-100 mt-0.5">พารามิเตอร์ pH, อุณหภูมิ, TDS อยู่ในระดับที่เหมาะสมสำหรับสัตว์น้ำ</p>
+              </div>
+            </div>
+            <button onclick="switchTab('alerts')" class="self-start sm:self-center px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs sm:text-sm font-semibold transition flex items-center space-x-1.5 shrink-0">
+              <span>ดูประวัติแจ้งเตือน</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- 2. PARAMETERS GRID (4 การ์ด) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+            <!-- Card 1: pH -->
+            <div id="sensor-card-ph" class="sensor-card p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+                    <span class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">ความเป็นกรด-ด่าง</span>
+                  </div>
+                  <span id="badge-ph" class="px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">ปกติ</span>
+                </div>
+                <div class="flex items-baseline space-x-2 my-1">
+                  <span id="val-ph" class="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-mono">7.25</span>
+                  <span class="text-xs text-slate-400">pH</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">เกณฑ์เป้าหมาย: <span id="range-ph" class="font-medium text-slate-700 dark:text-slate-300">6.50 - 8.00</span></p>
+              </div>
+
+              <!-- Gauge Progress Bar -->
+              <div class="mt-4 space-y-1.5">
+                <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden relative">
+                  <div id="bar-ph" class="h-full bg-cyan-500 rounded-full transition-all duration-500" style="width: 50%;"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                  <span>0.0</span>
+                  <span>7.0 (กลาง)</span>
+                  <span>14.0</span>
+                </div>
+              </div>
+              <div class="mt-2">
+                <svg viewBox="0 0 120 24" preserveAspectRatio="none" class="w-full h-6" role="img" aria-label="แนวโน้ม pH ย้อนหลัง 1 ชั่วโมง">
+                  <polyline id="sparkline-ph" points="" fill="none" stroke="#06b6d4" stroke-width="2" vector-effect="non-scaling-stroke" />
+                </svg>
+                <p class="text-[10px] text-slate-400">แนวโน้ม 1 ชม.</p>
+              </div>
+            </div>
+
+            <!-- Card 2: Temperature -->
+            <div id="sensor-card-temp" class="sensor-card p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    <span class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">อุณหภูมิน้ำ</span>
+                  </div>
+                  <div class="flex items-center space-x-1.5">
+                    <span id="badge-temp" class="px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">ปกติ</span>
+                  </div>
+                </div>
+                <div class="flex items-baseline space-x-2 my-1">
+                  <span id="val-temp" class="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-mono">26.4</span>
+                  <span id="unit-temp" class="text-xs text-slate-400">°C</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">เกณฑ์เป้าหมาย: <span id="range-temp" class="font-medium text-slate-700 dark:text-slate-300">24.0 - 30.0 °C</span></p>
+              </div>
+
+              <!-- Gauge Progress Bar -->
+              <div class="mt-4 space-y-1.5">
+                <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden relative">
+                  <div id="bar-temp" class="h-full bg-amber-500 rounded-full transition-all duration-500" style="width: 40%;"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                  <span>20°C</span>
+                  <span>26°C (เป้า)</span>
+                  <span>32°C</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: TDS -->
+            <div id="sensor-card-tds" class="sensor-card p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                    <span class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">สารละลายรวม (TDS)</span>
+                  </div>
+                  <span id="badge-tds" class="px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">ปกติ</span>
+                </div>
+                <div class="flex items-baseline space-x-2 my-1">
+                  <span id="val-tds" class="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-mono">185</span>
+                  <span class="text-xs text-slate-400">ppm (ชดเชยอุณหภูมิ)</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">เกณฑ์เป้าหมาย: <span id="range-tds" class="font-medium text-slate-700 dark:text-slate-300">100 - 400 ppm</span></p>
+              </div>
+
+              <!-- Gauge Progress Bar -->
+              <div class="mt-4 space-y-1.5">
+                <div class="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden relative">
+                  <div id="bar-tds" class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width: 28%;"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                  <span>0</span>
+                  <span>250 ppm</span>
+                  <span>500+</span>
+                </div>
+              </div>
+              <div class="mt-2">
+                <svg viewBox="0 0 120 24" preserveAspectRatio="none" class="w-full h-6" role="img" aria-label="แนวโน้ม TDS ย้อนหลัง 1 ชั่วโมง">
+                  <polyline id="sparkline-tds" points="" fill="none" stroke="#6366f1" stroke-width="2" vector-effect="non-scaling-stroke" />
+                </svg>
+                <p class="text-[10px] text-slate-400">แนวโน้ม 1 ชม.</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 3. HISTORICAL TREND -->
+          <div class="grid grid-cols-1 gap-6">
+
+            <div class="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 shadow-xs flex flex-col justify-between">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div class="flex items-center space-x-2">
+                  <i data-lucide="line-chart" class="w-5 h-5 text-cyan-600 dark:text-cyan-400"></i>
+                  <h4 class="font-bold text-slate-900 dark:text-white text-base">กราฟสถิติย้อนหลัง (Historical Trend)</h4>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-2">
+                  <!-- Parameter Tabs -->
+                  <div class="flex rounded-lg p-1 bg-slate-100 dark:bg-slate-700/60 text-xs font-medium">
+                    <button onclick="setChartParam('temp')" id="chart-btn-temp" class="px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs">อุณหภูมิ</button>
+                    <button onclick="setChartParam('ph')" id="chart-btn-ph" class="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800 dark:text-slate-400">pH</button>
+                    <button onclick="setChartParam('tds')" id="chart-btn-tds" class="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800 dark:text-slate-400">TDS</button>
+                  </div>
+
+                  <!-- Time Range Tabs -->
+                  <div class="flex rounded-lg p-1 bg-slate-100 dark:bg-slate-700/60 text-xs font-medium">
+                    <button onclick="setChartRange('1h')" id="range-btn-1h" class="px-2 py-1 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs">1 ชม.</button>
+                    <button onclick="setChartRange('24h')" id="range-btn-24h" class="px-2 py-1 rounded-md text-slate-500 hover:text-slate-800 dark:text-slate-400">24 ชม.</button>
+                    <button onclick="setChartRange('7d')" id="range-btn-7d" class="px-2 py-1 rounded-md text-slate-500 hover:text-slate-800 dark:text-slate-400">7 วัน</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Canvas Container -->
+              <div class="relative h-64 w-full">
+                <canvas id="historicalChart"></canvas>
+              </div>
+              <p id="historical-chart-status" class="mt-2 text-xs text-slate-400" role="status">กำลังโหลดข้อมูลย้อนหลัง...</p>
+
+              <div class="mt-3 flex items-center justify-between text-xs text-slate-400">
+                <span class="flex items-center space-x-1">
+                  <span class="w-3 h-0.5 border-t-2 border-dashed border-rose-400 inline-block"></span>
+                  <span>เส้นประสีแดง: เกณฑ์ Min/Max</span>
+                </span>
+                <span>ข้อมูลจริงจากฐานข้อมูล อัปเดตทุก 30 วินาที</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 4. LATEST 5 ALERTS TABLE & HARDWARE HEALTH -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Latest Alerts (2 Columns) -->
+            <div class="lg:col-span-2 p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 shadow-xs space-y-3">
+              <div class="flex items-center justify-between">
+                <h4 class="font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                  <i data-lucide="bell" class="w-5 h-5 text-rose-500"></i>
+                  <span>การแจ้งเตือน 5 รายการล่าสุด (Recent Alerts)</span>
+                </h4>
+                <button onclick="switchTab('alerts')" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline font-medium">ดูทั้งหมด →</button>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="text-slate-400 uppercase font-semibold border-b border-slate-100 dark:border-slate-700/60 pb-2">
+                    <tr>
+                      <th class="py-2.5">เวลา</th>
+                      <th class="py-2.5">พารามิเตอร์</th>
+                      <th class="py-2.5">ค่าที่อ่านได้</th>
+                      <th class="py-2.5">เกณฑ์กำหนด</th>
+                      <th class="py-2.5">ประเภท</th>
+                      <th class="py-2.5 text-right">การจัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-alerts-tbody" class="divide-y divide-slate-100 dark:divide-slate-700/40 text-slate-600 dark:text-slate-300">
+                    <!-- Dynamic Rows Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Hardware Health Status -->
+            <div class="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 shadow-xs space-y-4">
+              <h4 class="font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                <i data-lucide="cpu" class="w-5 h-5 text-indigo-500"></i>
+                <span>สถานะระบบ & ฮาร์ดแวร์</span>
+              </h4>
+
+              <div class="space-y-3 text-xs">
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/30">
+                  <span class="text-slate-500">บอร์ดไมโครคอนโทรลเลอร์</span>
+                  <span class="font-semibold text-slate-800 dark:text-slate-200">ESP32 DevKit V1</span>
+                </div>
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/30">
+                  <span class="text-slate-500">ความแรงสัญญาณ Wi-Fi</span>
+                  <span id="health-wifi" class="font-semibold text-slate-400">-</span>
+                </div>
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/30">
+                  <span class="text-slate-500">อัตราหน่วงเครือข่าย (Latency)</span>
+                  <span id="health-latency" class="font-semibold text-slate-400">-</span>
+                </div>
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/30">
+                  <span class="text-slate-500">เวลาทำงานต่อเนื่อง (Uptime)</span>
+                  <span id="health-uptime" class="font-semibold text-slate-400">-</span>
+                </div>
+              </div>
+
+              <!-- Sensors Self-Check -->
+              <div class="pt-2 border-t border-slate-100 dark:border-slate-700">
+                <span class="text-xs text-slate-400 font-medium mb-2 block">สถานะความพร้อมของเซนเซอร์:</span>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div class="flex items-center space-x-1.5 text-slate-400">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                    <span id="health-sensor-ph">pH Sensor: -</span>
+                  </div>
+                  <div class="flex items-center space-x-1.5 text-slate-400">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                    <span id="health-sensor-temp">DS18B20 Temp: -</span>
+                  </div>
+                  <div class="flex items-center space-x-1.5 text-slate-400">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                    <span id="health-sensor-tds">TDS Sensor: -</span>
+                  </div>
+                  <div class="flex items-center space-x-1.5 text-slate-400">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                    <span id="health-sensor-turbidity">Turbidity: -</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- TAB 3: ALERTS LOG                          -->
+        <!-- ========================================== -->
+        <section id="tab-alerts" class="tab-content hidden space-y-6">
+
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 class="text-xl font-bold text-slate-900 dark:text-white">ประวัติการแจ้งเตือน (Alert Incident Log)</h3>
+              <p class="text-xs sm:text-sm text-slate-500">บันทึกเหตุการณ์ค่าผิดปกติ เซนเซอร์เสีย และการตัดการเชื่อมต่อ พร้อมระบบกดรับทราบ (Acknowledge)</p>
+            </div>
+            <button onclick="exportAlertsCSV()" class="self-start sm:self-center px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-semibold text-xs shadow-md shadow-cyan-600/20 transition flex items-center space-x-2">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>ส่งออกข้อมูล (Export CSV)</span>
+            </button>
+          </div>
+
+          <!-- Summary Badges -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+              <span class="text-xs text-slate-400 block">แจ้งเตือนวันนี้</span>
+              <span id="summary-alerts-today" class="text-2xl font-bold font-mono text-slate-900 dark:text-white">2 รายการ</span>
+            </div>
+            <div class="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+              <span class="text-xs text-slate-400 block">ย้อนหลัง 7 วัน</span>
+              <span id="summary-alerts-7d" class="text-2xl font-bold font-mono text-slate-900 dark:text-white">7 รายการ</span>
+            </div>
+            <div class="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+              <span class="text-xs text-slate-400 block">รอรับทราบ (Unack)</span>
+              <span id="summary-alerts-unack" class="text-2xl font-bold font-mono text-slate-900 dark:text-white">1 รายการ</span>
+            </div>
+            <div class="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+              <span class="text-xs text-slate-400 block">ส่ง Telegram สำเร็จ</span>
+              <span id="summary-alerts-telegram" class="text-2xl font-bold font-mono text-slate-900 dark:text-white">--</span>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar -->
+          <div class="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span class="text-slate-400 font-medium">กรองตาม:</span>
+              <select id="filter-alert-param" onchange="renderAlertsTable()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-medium">
+                <option value="ALL">ทุกพารามิเตอร์</option>
+                <option value="ph">pH</option>
+                <option value="temp">อุณหภูมิ</option>
+                <option value="tds">TDS</option>
+                <option value="system">ระบบ/การเชื่อมต่อ</option>
+              </select>
+
+              <select id="filter-alert-type" onchange="renderAlertsTable()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-medium">
+                <option value="ALL">ทุกประเภท (Type)</option>
+                <option value="LOW">ต่ำกว่าเกณฑ์ (LOW)</option>
+                <option value="HIGH">สูงกว่าเกณฑ์ (HIGH)</option>
+                <option value="SENSOR_ERROR">เซนเซอร์เสีย (SENSOR_ERROR)</option>
+                <option value="OFFLINE">อุปกรณ์หลุด (OFFLINE)</option>
+              </select>
+
+              <select id="filter-alert-ack" onchange="renderAlertsTable()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-medium">
+                <option value="ALL">ทุกสถานะการรับทราบ</option>
+                <option value="false">ยังไม่ได้รับทราบ (Unacknowledged)</option>
+                <option value="true">รับทราบแล้ว (Acknowledged)</option>
+              </select>
+            </div>
+
+            <button onclick="acknowledgeAllAlerts()" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline font-medium">
+              กดรับทราบทั้งหมด (Ack All)
+            </button>
+          </div>
+
+          <!-- Main Alert Incident Table -->
+          <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 shadow-xs">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="text-slate-400 uppercase font-semibold border-b border-slate-100 dark:border-slate-700/60 pb-2">
+                  <tr>
+                    <th class="py-3">เวลาที่เกิดเหตุ</th>
+                    <th class="py-3">พารามิเตอร์</th>
+                    <th class="py-3">ค่าที่วัดได้</th>
+                    <th class="py-3">เกณฑ์ที่เกี่ยวข้อง</th>
+                    <th class="py-3">ประเภทเหตุการณ์</th>
+                    <th class="py-3">สถานะ Telegram</th>
+                    <th class="py-3 text-right">การรับทราบ</th>
+                  </tr>
+                </thead>
+                <tbody id="alerts-full-tbody" class="divide-y divide-slate-100 dark:divide-slate-700/40 text-slate-600 dark:text-slate-300">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- TAB 4: THRESHOLDS                          -->
+        <!-- ========================================== -->
+        <section id="tab-thresholds" class="tab-content hidden space-y-6">
+
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 class="text-xl font-bold text-slate-900 dark:text-white">ตั้งเกณฑ์ต่ำสุด-สูงสุด (Threshold Settings)</h3>
+              <p class="text-xs sm:text-sm text-slate-500">กำหนดช่วงค่าความปลอดภัยสำหรับสัตว์น้ำ พร้อมระยะเว้นแจ้งเตือนซ้ำ (Cooldown Suppression)</p>
+            </div>
+            <button onclick="resetThresholdsDefault()" class="self-start sm:self-center px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold transition flex items-center space-x-1.5">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <span>รีเซ็ตเป็นค่าเริ่มต้น (Reset to Default)</span>
+            </button>
+          </div>
+
+          <!-- Threshold Notice -->
+          <div class="p-4 rounded-xl bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800 text-xs text-cyan-800 dark:text-cyan-300 flex items-start space-x-2">
+            <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-semibold block">คำแนะนำทางวิชาการ:</span>
+              <span>ค่าในตารางเป็นค่าทดสอบมาตรฐานชั่วคราว ควรปรับเกณฑ์ตามชนิดปลาและระบบนิเวศที่เลี้ยงจริงก่อนนำไปใช้งาน</span>
+            </div>
+          </div>
+
+          <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 shadow-xs space-y-6">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="text-slate-400 uppercase font-semibold border-b border-slate-100 dark:border-slate-700/60 pb-3">
+                  <tr>
+                    <th class="py-3">พารามิเตอร์</th>
+                    <th class="py-3">เกณฑ์ต่ำสุด (Min)</th>
+                    <th class="py-3">เกณฑ์สูงสุด (Max)</th>
+                    <th class="py-3">Hysteresis</th>
+                    <th class="py-3">หน่วยวัด</th>
+                    <th class="py-3">ระยะเว้นแจ้งซ้ำ (Cooldown)</th>
+                    <th class="py-3">ช่วงธรรมชาติ (Plausible)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-700/40">
+                  
+                  <!-- pH Row -->
+                  <tr>
+                    <td class="py-4 font-semibold text-slate-900 dark:text-white flex items-center space-x-2">
+                      <span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+                      <span>ความเป็นกรด-ด่าง (pH)</span>
+                    </td>
+                    <td class="py-4">
+                      <input type="number" id="thresh-ph-min" step="0.1" value="6.5" class="w-24 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                    </td>
+                    <td class="py-4">
+                      <input type="number" id="thresh-ph-max" step="0.1" value="8.0" class="w-24 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                    </td>
+                    <td class="py-4"><input type="number" id="thresh-ph-hysteresis" step="0.1" min="0" value="0.1" class="w-20 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono" aria-label="pH hysteresis"></td>
+                    <td class="py-4 text-slate-500">-</td>
+                    <td class="py-4">
+                      <div class="flex items-center space-x-1">
+                        <input type="number" id="thresh-ph-cool" value="10" class="w-20 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                        <span class="text-slate-400">นาที</span>
+                      </div>
+                    </td>
+                    <td class="py-4 text-slate-400 font-mono">0.00 – 14.00</td>
+                  </tr>
+
+                  <!-- Temperature Row -->
+                  <tr>
+                    <td class="py-4 font-semibold text-slate-900 dark:text-white flex items-center space-x-2">
+                      <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                      <span>อุณหภูมิน้ำ (Temperature)</span>
+                    </td>
+                    <td class="py-4">
+                      <input type="number" id="thresh-temp-min" step="0.5" value="24.0" class="w-24 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                    </td>
+                    <td class="py-4">
+                      <input type="number" id="thresh-temp-max" step="0.5" value="30.0" class="w-24 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                    </td>
+                    <td class="py-4"><input type="number" id="thresh-temp-hysteresis" step="0.1" min="0" value="0.5" class="w-20 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono" aria-label="อุณหภูมิ hysteresis"></td>
+                    <td class="py-4 text-slate-500">°C</td>
+                    <td class="py-4">
+                      <div class="flex items-center space-x-1">
+                        <input type="number" id="thresh-temp-cool" value="10" class="w-20 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                        <span class="text-slate-400">นาที</span>
+                      </div>
+                    </td>
+                    <td class="py-4 text-slate-400 font-mono">0.0 – 50.0 °C</td>
+                  </tr>
+
+                  <!-- TDS Row -->
+                  <tr>
+                    <td class="py-4 font-semibold text-slate-900 dark:text-white flex items-center space-x-2">
+                      <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                      <span>สารละลายรวม (TDS)</span>
+                    </td>
+                    <td class="py-4">
+                      <input type="number" id="thresh-tds-min" step="10" value="100" class="w-24 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                    </td>
+                    <td class="py-4">
+                      <input type="number" id="thresh-tds-max" step="10" value="400" class="w-24 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                    </td>
+                    <td class="py-4"><input type="number" id="thresh-tds-hysteresis" step="1" min="0" value="10" class="w-20 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono" aria-label="TDS hysteresis"></td>
+                    <td class="py-4 text-slate-500">ppm</td>
+                    <td class="py-4">
+                      <div class="flex items-center space-x-1">
+                        <input type="number" id="thresh-tds-cool" value="10" class="w-20 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                        <span class="text-slate-400">นาที</span>
+                      </div>
+                    </td>
+                    <td class="py-4 text-slate-400 font-mono">0 – 2000 ppm</td>
+                  </tr>
+
+                </tbody>
+              </table>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+              <button onclick="saveThresholds()" class="px-6 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-semibold text-xs shadow-md shadow-cyan-600/20 transition flex items-center space-x-2">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span>บันทึกการตั้งค่าเกณฑ์ (Save Thresholds)</span>
+              </button>
+            </div>
+          </div>
+
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- TAB 5: SETTINGS                            -->
+        <!-- ========================================== -->
+        <section id="tab-settings" class="tab-content hidden space-y-6">
+
+          <div>
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">ตั้งค่าระบบ (Settings)</h3>
+            <p class="text-xs sm:text-sm text-slate-500">จัดการช่องทางแจ้งเตือน Telegram Bot และการส่งข้อมูลจาก ESP32</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- 1. TELEGRAM BOT NOTIFICATION -->
+            <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 shadow-xs space-y-5">
+              <div class="flex items-center space-x-3 border-b border-slate-100 dark:border-slate-700 pb-3">
+                <div class="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                  <i data-lucide="send" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-sm text-slate-900 dark:text-white">การแจ้งเตือนผ่าน Telegram Bot</h4>
+                  <p class="text-xs text-slate-400">ส่งข้อความแจ้งเตือนด่วนเมื่อเกิดสภาวะผิดปกติ</p>
+                </div>
+              </div>
+
+              <div class="space-y-3 text-xs">
+                <div>
+                  <label class="text-slate-500 mb-1 block">Telegram Bot Token:</label>
+                  <input type="password" id="input-tg-token" autocomplete="new-password" placeholder="ใส่ Token จาก BotFather" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                </div>
+                <div>
+                  <label class="text-slate-500 mb-1 block">Chat ID ผู้รับ:</label>
+                  <input type="text" id="input-tg-chatid" placeholder="เช่น 123456789" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                </div>
+
+                <div class="space-y-2 pt-2">
+                  <label class="text-slate-500 block font-semibold">เลือกเหตุการณ์ที่ต้องการให้แจ้งเตือน:</label>
+                  <div class="flex flex-wrap gap-x-4 gap-y-2">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                      <input type="checkbox" id="tg-type-low" value="LOW" checked class="rounded border-slate-300 text-cyan-600">
+                      <span>ค่าต่ำกว่าเกณฑ์ (LOW)</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                      <input type="checkbox" id="tg-type-high" value="HIGH" checked class="rounded border-slate-300 text-cyan-600">
+                      <span>ค่าสูงกว่าเกณฑ์ (HIGH)</span>
+                    </label>
+                  </div>
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="tg-type-sensor-error" value="SENSOR_ERROR" checked class="rounded border-slate-300 text-cyan-600">
+                    <span>แจ้งเตือนเมื่อเซนเซอร์ชำรุด (SENSOR_ERROR)</span>
+                  </label>
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="tg-type-offline" value="OFFLINE" checked class="rounded border-slate-300 text-cyan-600">
+                    <span>แจ้งเตือนเมื่ออุปกรณ์ออฟไลน์เกิน 60 วินาที (OFFLINE)</span>
+                  </label>
+                </div>
+
+                <label class="flex items-center space-x-2 pt-1 font-semibold text-slate-700 dark:text-slate-300">
+                  <input type="checkbox" id="tg-enabled" class="rounded border-slate-300 text-cyan-600">
+                  <span>เปิดการแจ้งเตือน Telegram</span>
+                </label>
+                <p id="tg-config-status" class="text-slate-400">ยังไม่ได้ตั้งค่า Bot</p>
+
+                <div class="pt-3 flex gap-2">
+                  <button onclick="testTelegramMessage()" class="flex-1 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold transition flex items-center justify-center space-x-1.5">
+                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                    <span>ทดสอบส่งข้อความ (Test Telegram)</span>
+                  </button>
+                  <button onclick="saveTelegramSettings()" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 font-semibold transition">
+                    บันทึก
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. DATA TRANSMISSION & TIMEOUTS -->
+            <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 shadow-xs space-y-5">
+              <div class="flex items-center space-x-3 border-b border-slate-100 dark:border-slate-700 pb-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                  <i data-lucide="radio" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-sm text-slate-900 dark:text-white">ความถี่การส่งข้อมูล & การตรวจจับออฟไลน์</h4>
+                  <p class="text-xs text-slate-400">กำหนดระยะเวลาการ Polling และ Heartbeat Watchdog</p>
+                </div>
+              </div>
+
+              <div class="space-y-4 text-xs">
+                <div>
+                  <label class="text-slate-500 mb-1 block">ความถี่ที่ ESP32 ส่งข้อมูล (Polling Interval):</label>
+                  <div class="flex items-center space-x-2">
+                    <input type="number" value="3" min="1" max="10" class="w-24 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                    <span class="text-slate-400">วินาที (ค่าแนะนำ: 2 - 5 วินาที)</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="text-slate-500 mb-1 block">เวลา Timeout ก่อนถือว่าอุปกรณ์ออฟไลน์:</label>
+                  <div class="flex items-center space-x-2">
+                    <input type="number" value="60" min="30" max="180" class="w-24 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono">
+                    <span class="text-slate-400">วินาที (ตามสเปกความปลอดภัย: 60 วินาที)</span>
+                  </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-700">
+                  <span class="text-slate-500 mb-1 block font-semibold">การแสดงผล & บัญชีผู้ใช้:</span>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button onclick="toggleTheme()" class="py-2 px-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-left">
+                      ธีม: <span class="font-semibold text-cyan-600">สลับสว่าง/มืด</span>
+                    </button>
+                    <button onclick="alert('เปลี่ยนรหัสผ่านในระบบจัดการบัญชี')" class="py-2 px-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-left">
+                      บัญชี: <span class="font-semibold">เปลี่ยนรหัสผ่าน</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MOBILE BOTTOM TAB BAR (ตามสเปก < 1024px)     -->
+  <!-- ========================================== -->
+  <nav class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-2 py-1.5 flex justify-around shadow-lg">
+    <button onclick="switchTab('dashboard')" id="nav-mobile-dashboard" class="flex flex-col items-center justify-center p-1.5 rounded-xl text-cyan-600 dark:text-cyan-400 min-w-[56px] min-h-[48px]">
+      <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium mt-0.5">แดชบอร์ด</span>
+    </button>
+
+    <button onclick="switchTab('alerts')" id="nav-mobile-alerts" class="flex flex-col items-center justify-center p-1.5 rounded-xl text-slate-500 dark:text-slate-400 min-w-[56px] min-h-[48px] relative">
+      <i data-lucide="bell" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium mt-0.5">แจ้งเตือน</span>
+      <span id="badge-mobile-alerts-count" class="absolute top-1 right-2 w-2 h-2 rounded-full bg-rose-500 hidden"></span>
+    </button>
+
+    <button onclick="switchTab('thresholds')" id="nav-mobile-thresholds" class="flex flex-col items-center justify-center p-1.5 rounded-xl text-slate-500 dark:text-slate-400 min-w-[56px] min-h-[48px]">
+      <i data-lucide="gauge" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium mt-0.5">เกณฑ์</span>
+    </button>
+
+    <button onclick="switchTab('settings')" id="nav-mobile-settings" class="flex flex-col items-center justify-center p-1.5 rounded-xl text-slate-500 dark:text-slate-400 min-w-[56px] min-h-[48px]">
+      <i data-lucide="settings" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium mt-0.5">ตั้งค่า</span>
+    </button>
+  </nav>
+
+  <!-- ========================================== -->
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+
+  <!-- ========================================== -->
+  <!-- CLIENT JAVASCRIPT LOGIC                    -->
+  <!-- ========================================== -->
+  <script>
+    async function dashboardFetch(url, options = {}, retry = true) {
+      const method = (options.method || 'GET').toUpperCase();
+      const needsAdminKey = (method !== 'GET' && method !== 'HEAD' || url === '/api/settings') && /^\/api\//.test(url);
+      if (!needsAdminKey) return fetch(url, options);
+
+      let key = sessionStorage.getItem('dashboardApiKey');
+      const localHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      if (!key && localHost && retry) {
+        const response = await fetch(url, options);
+        if (response.status !== 401) return response;
+        return dashboardFetch(url, options, false);
+      }
+      if (!key) {
+        key = window.prompt('ใส่ DASHBOARD_API_KEY ที่ตั้งไว้ใน Vercel');
+        if (key === null || !key.trim()) throw new Error('ยกเลิกการยืนยันตัวตน');
+        key = key.trim();
+        sessionStorage.setItem('dashboardApiKey', key);
+      }
+
+      const headers = new Headers(options.headers || {});
+      headers.set('X-Dashboard-API-Key', key);
+      const response = await fetch(url, { ...options, headers });
+      if (response.status === 401 && retry) {
+        sessionStorage.removeItem('dashboardApiKey');
+        return dashboardFetch(url, options, false);
+      }
+      return response;
+    }
+
+    // System Global State
+    const AppState = {
+      darkMode: false,
+      currentTab: 'dashboard',
+      
+      // Live Reading Values
+      readings: {
+        ph: 0,
+        temp: 0,
+        tds: 0,
+        turbidityRaw: 0,
+        sensorOk: { ph: false, temp: false, tds: false, turbidity: false },
+        rssi: null,
+        uptimeSec: null,
+        latencyMs: null,
+        lastSeen: null,
+        status: "OFFLINE"
+      },
+
+      // Thresholds Table
+      thresholds: {
+        ph: { min: 6.5, max: 8.0, hysteresis: 0.1, cooldown: 10, unit: "-" },
+        temp: { min: 24.0, max: 30.0, hysteresis: 0.5, cooldown: 10, unit: "°C" },
+        tds: { min: 100, max: 400, hysteresis: 10, cooldown: 10, unit: "ppm" },
+        turbidity: { min: null, max: 2500, hysteresis: 50, cooldown: 10, unit: "ADC" }
+      },
+
+      // Actuators (Relays)
+      devices: {
+        light: {
+          actualState: "ON",
+          desiredState: "ON",
+          mode: "schedule",
+          startTime: "08:00",
+          endTime: "18:00",
+          lastChangeAt: new Date(Date.now() - 3600000)
+        },
+        heater: {
+          actualState: "OFF",
+          desiredState: "OFF",
+          mode: "auto",
+          targetTemp: 26.0,
+          hysteresis: 0.5,
+          accumulatedMinsToday: 45,
+          lastChangeAt: new Date(Date.now() - 1800000)
+        }
+      },
+
+      // Alert & Command Logs
+      alerts: [],
+      commands: [],
+
+      chartParam: 'temp',
+      chartRange: '1h'
+    };
+
+    let chartInstance = null;
+    let pollIntervalTimer = null;
+    let chartHistory = [];
+    let lastChartHistoryFetchAt = 0;
+    const sparklineSamples = { ph: [], tds: [] };
+
+    // Initialize application
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initChart();
+
+      updateUI();
+      renderAlertsTable();
+      loadTelegramSettings();
+
+      systemCycleTick();
+      loadHistoricalReadings();
+      pollIntervalTimer = setInterval(systemCycleTick, 3000);
+    });
+
+    async function systemCycleTick() {
+      await fetchLiveServerData();
+      if (Date.now() - lastChartHistoryFetchAt >= 30000) {
+        await loadHistoricalReadings();
+      }
+      recordSparklineSample();
+      updateUI();
+    }
+
+    function recordSparklineSample() {
+      if (AppState.readings.status === "OFFLINE") return;
+      sparklineSamples.ph.push(AppState.readings.ph);
+      sparklineSamples.tds.push(AppState.readings.tds);
+      Object.values(sparklineSamples).forEach(samples => {
+        if (samples.length > 20) samples.shift();
+      });
+    }
+
+    function renderSparkline(id, samples) {
+      if (AppState.readings.status === "OFFLINE" || samples.length < 2) {
+        document.getElementById(id).setAttribute('points', '');
+        return;
+      }
+      const min = Math.min(...samples);
+      const max = Math.max(...samples);
+      const spread = max - min || 1;
+      const points = samples.map((value, index) => {
+        const x = (index / (samples.length - 1)) * 120;
+        const y = 22 - ((value - min) / spread) * 18;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      document.getElementById(id).setAttribute('points', points);
+    }
+
+    // Live Server REST API Synchronization
+    async function fetchLiveServerData() {
+      try {
+        const [resReadings, resDevices, resAlerts, resCmds] = await Promise.all([
+          fetch('/api/readings/latest'),
+          fetch('/api/devices'),
+          fetch('/api/alerts'),
+          fetch('/api/commands')
+        ]);
+
+        if (resReadings.ok) {
+          const json = await resReadings.json();
+          if (json.success && json.data) {
+            AppState.readings = { ...AppState.readings, ...json.data };
+          } else {
+            throw new Error('Backend returned no sensor readings');
+          }
+        } else {
+          throw new Error(`Readings API returned HTTP ${resReadings.status}`);
+        }
+        if (resDevices.ok) {
+          const json = await resDevices.json();
+          if (json.success && json.data) {
+            AppState.devices = { ...AppState.devices, ...json.data };
+          }
+        }
+        if (resAlerts.ok) {
+          const json = await resAlerts.json();
+          if (json.success && Array.isArray(json.data)) {
+            AppState.alerts = json.data.map(a => ({ ...a, ts: new Date(a.ts) }));
+            renderAlertsTable();
+          }
+        }
+        if (resCmds.ok) {
+          const json = await resCmds.json();
+          if (json.success && Array.isArray(json.data)) {
+            AppState.commands = json.data.map(c => ({ ...c, ts: new Date(c.ts) }));
+          }
+        }
+      } catch (err) {
+        console.error('[Live API] Could not connect to backend:', err.message);
+        AppState.readings.status = "OFFLINE";
+        AppState.readings.sensorOk = { ph: false, temp: false, tds: false, turbidity: false };
+        AppState.devices.heater.actualState = "OFF";
+        AppState.devices.heater.desiredState = "OFF";
+      }
+    }
+
+    // Update All UI Elements
+    function updateUI() {
+      const r = AppState.readings;
+      const isOffline = r.status === "OFFLINE";
+
+      // Status Banner update
+      const banner = document.getElementById('status-banner');
+      const bannerTitle = document.getElementById('status-banner-title');
+      const bannerDesc = document.getElementById('status-banner-desc');
+      const bannerIcon = document.getElementById('status-banner-icon');
+      const headerBadge = document.getElementById('header-status-badge');
+
+      if (r.status === "NORMAL") {
+        banner.className = "rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between bg-emerald-500 text-white shadow-lg shadow-emerald-500/10 transition-all duration-300";
+        bannerTitle.innerText = "ตู้ปลาปลอดภัย ทุกค่าอยู่ในเกณฑ์ปกติ";
+        bannerDesc.innerText = "พารามิเตอร์ pH, อุณหภูมิ, TDS อยู่ในระดับที่เหมาะสมสำหรับสัตว์น้ำ";
+        bannerIcon.setAttribute('data-lucide', 'check-circle');
+        headerBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300";
+        headerBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span><span>ตู้ปลาปกติ</span>';
+      } else if (r.status === "ABNORMAL") {
+        banner.className = "rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between bg-rose-600 text-white shadow-lg shadow-rose-600/10 transition-all duration-300";
+        bannerTitle.innerText = "⚠️ พบค่าคุณภาพน้ำผิดปกติ (Out of Range)";
+        bannerDesc.innerText = "มีพารามิเตอร์ออกนอกช่วงเกณฑ์กำหนด ระบบบันทึก Alert และดำเนินการด้านความปลอดภัยแล้ว";
+        bannerIcon.setAttribute('data-lucide', 'alert-triangle');
+        headerBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300";
+        headerBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5 animate-ping"></span><span>ผิดปกติ (ABNORMAL)</span>';
+      } else if (r.status === "SENSOR_ERROR") {
+        banner.className = "rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between bg-amber-500 text-white shadow-lg shadow-amber-500/10 transition-all duration-300";
+        bannerTitle.innerText = "⚠️ ตรวจพบข้อผิดพลาดของเซนเซอร์ (SENSOR ERROR)";
+        bannerDesc.innerText = "เซนเซอร์หลุดหรือค่าอยู่นอกช่วงความเป็นไปได้ ฮีตเตอร์ถูกบังคับตัดการทำงานอัตโนมัติ";
+        bannerIcon.setAttribute('data-lucide', 'alert-circle');
+        headerBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300";
+        headerBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span><span>เซนเซอร์เสีย</span>';
+      } else if (r.status === "OFFLINE") {
+        banner.className = "rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between bg-slate-600 text-white shadow-lg shadow-slate-600/10 transition-all duration-300";
+        bannerTitle.innerText = "🔌 ESP32 ออฟไลน์ ขาดการเชื่อมต่อ (> 60 วินาที)";
+        const lastSeen = r.lastSeen ? new Date(r.lastSeen).toLocaleString('th-TH') : "ไม่ทราบเวลา";
+        bannerDesc.innerText = `ข้อมูลล่าสุดเมื่อ ${lastSeen} — ระงับการสั่งงานอุปกรณ์ทั้งหมด`;
+        bannerIcon.setAttribute('data-lucide', 'wifi-off');
+        headerBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-300";
+        headerBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span><span>OFFLINE</span>';
+      }
+
+      const cardStates = [
+        { card: 'sensor-card-ph', badge: 'badge-ph', key: 'ph', value: r.ph },
+        { card: 'sensor-card-temp', badge: 'badge-temp', key: 'temp', value: r.temp },
+        { card: 'sensor-card-tds', badge: 'badge-tds', key: 'tds', value: r.tds }
+      ];
+      cardStates.forEach(({ card, badge, key, value }) => {
+        const cardElement = document.getElementById(card);
+        const badgeElement = document.getElementById(badge);
+        const sensorOk = r.sensorOk[key];
+        const threshold = AppState.thresholds[key];
+        const abnormal = !isOffline && sensorOk && ((threshold.min !== null && value < threshold.min) || value > threshold.max);
+        cardElement.classList.toggle('border-amber-400', !sensorOk);
+        cardElement.classList.toggle('dark:border-amber-500', !sensorOk);
+        cardElement.classList.toggle('border-rose-400', sensorOk && abnormal);
+        cardElement.classList.toggle('dark:border-rose-500', sensorOk && abnormal);
+        cardElement.classList.toggle('opacity-60', r.status === "OFFLINE");
+
+        if (isOffline) {
+          badgeElement.innerText = "OFFLINE";
+          badgeElement.className = "px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300";
+        } else if (!sensorOk) {
+          badgeElement.innerText = "SENSOR ERROR";
+          badgeElement.className = "px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300";
+        } else if (abnormal) {
+          badgeElement.innerText = value < threshold.min ? "ต่ำกว่าเกณฑ์" : "สูงกว่าเกณฑ์";
+          badgeElement.className = "px-2 py-0.5 rounded-md text-xs font-semibold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300";
+        } else {
+          badgeElement.innerText = "ปกติ";
+          badgeElement.className = "px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300";
+        }
+      });
+
+      // Sensor Card Values
+      document.getElementById('val-ph').innerText = isOffline ? "-" : r.sensorOk.ph ? r.ph.toFixed(2) : "--";
+      document.getElementById('val-temp').innerText = isOffline ? "-" : r.sensorOk.temp ? r.temp.toFixed(1) : "--";
+      document.getElementById('val-tds').innerText = isOffline ? "-" : r.sensorOk.tds ? r.tds : "--";
+      document.getElementById('range-ph').innerText = `${AppState.thresholds.ph.min.toFixed(2)} - ${AppState.thresholds.ph.max.toFixed(2)}`;
+      document.getElementById('range-temp').innerText = `${AppState.thresholds.temp.min.toFixed(1)} - ${AppState.thresholds.temp.max.toFixed(1)} °C`;
+      document.getElementById('range-tds').innerText = `${AppState.thresholds.tds.min} - ${AppState.thresholds.tds.max} ppm`;
+      document.querySelector('#header-updated-time span').innerText = r.lastSeen
+        ? `ข้อมูลล่าสุด ${new Date(r.lastSeen).toLocaleTimeString('th-TH')}`
+        : "ยังไม่มีข้อมูลจาก ESP32";
+      renderSparkline('sparkline-ph', sparklineSamples.ph);
+      renderSparkline('sparkline-tds', sparklineSamples.tds);
+
+      // Gauge bar percentages
+      document.getElementById('bar-ph').style.width = isOffline ? '0%' : Math.min(100, Math.max(0, (r.ph / 14) * 100)) + '%';
+      document.getElementById('bar-temp').style.width = isOffline ? '0%' : Math.min(100, Math.max(0, ((r.temp - 20) / 15) * 100)) + '%';
+      document.getElementById('bar-tds').style.width = isOffline ? '0%' : Math.min(100, Math.max(0, (r.tds / 600) * 100)) + '%';
+      document.getElementById('health-wifi').innerText = !isOffline && Number.isFinite(r.rssi) ? `${r.rssi} dBm` : "-";
+      document.getElementById('health-latency').innerText = !isOffline && Number.isFinite(r.latencyMs) ? `${r.latencyMs} ms` : "-";
+      document.getElementById('health-uptime').innerText = !isOffline && Number.isFinite(r.uptimeSec)
+        ? `${Math.floor(r.uptimeSec / 86400)} วัน ${Math.floor((r.uptimeSec % 86400) / 3600)} ชั่วโมง`
+        : "-";
+      document.getElementById('health-sensor-ph').innerText = `pH Sensor: ${isOffline ? "-" : r.sensorOk.ph ? "OK" : "ERROR"}`;
+      document.getElementById('health-sensor-temp').innerText = `DS18B20 Temp: ${isOffline ? "-" : r.sensorOk.temp ? "OK" : "ERROR"}`;
+      document.getElementById('health-sensor-tds').innerText = `TDS Sensor: ${isOffline ? "-" : r.sensorOk.tds ? "OK" : "ERROR"}`;
+      document.getElementById('health-sensor-turbidity').innerText = `Turbidity: ${isOffline ? "-" : r.sensorOk.turbidity ? "OK" : "ERROR"}`;
+
+      // Unread alerts count badge
+      const unackCount = AppState.alerts.filter(a => !a.acknowledged).length;
+      const badgeDesktop = document.getElementById('badge-alerts-count');
+      const badgeMobile = document.getElementById('badge-mobile-alerts-count');
+      badgeDesktop.innerText = unackCount;
+      badgeDesktop.classList.toggle('hidden', unackCount === 0 || window.innerWidth < 1024);
+      badgeMobile.classList.toggle('hidden', unackCount === 0);
+
+      // Update Chart with live tick
+      lucide.createIcons();
+    }
+
+    // Chart.js Setup
+    function initChart() {
+      const ctx = document.getElementById('historicalChart').getContext('2d');
+      const labels = [];
+      const data = [];
+      const now = new Date();
+
+      for (let i = 12; i >= 0; i--) {
+        const time = new Date(now.getTime() - i * 300000);
+        labels.push(time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        data.push(null);
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'อุณหภูมิน้ำ (°C)',
+              data: data,
+              borderColor: '#06b6d4',
+              backgroundColor: 'rgba(6, 182, 212, 0.1)',
+              fill: false,
+              spanGaps: false,
+              tension: 0.2,
+              borderWidth: 2.5,
+              pointRadius: 2,
+              pointHoverRadius: 5
+            },
+            {
+              label: 'เกณฑ์สูงสุด (Max)',
+              data: labels.map(() => 30.0),
+              borderColor: '#f43f5e',
+              borderDash: [5, 5],
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false
+            },
+            {
+              label: 'เกณฑ์ต่ำสุด (Min)',
+              data: labels.map(() => 24.0),
+              borderColor: '#38bdf8',
+              borderDash: [5, 5],
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: { boxWidth: 12, font: { family: 'Prompt', size: 11 } }
+            }
+          },
+          scales: {
+            y: {
+              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              ticks: { font: { family: 'Prompt', size: 10 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'Prompt', size: 10 }, maxTicksLimit: 10 }
+            }
+          }
+        }
+      });
+    }
+
+    async function loadHistoricalReadings() {
+      const status = document.getElementById('historical-chart-status');
+      lastChartHistoryFetchAt = Date.now();
+      const requestedRange = AppState.chartRange;
+      try {
+        const response = await fetch(`/api/readings?range=${encodeURIComponent(requestedRange)}`);
+        const result = await response.json();
+        if (!response.ok || !result.success || !Array.isArray(result.data)) {
+          throw new Error(result.error || `HTTP ${response.status}`);
+        }
+        if (requestedRange !== AppState.chartRange) return;
+
+        chartHistory = result.data;
+        lastChartHistoryFetchAt = Date.now();
+        renderHistoricalChart();
+        status.innerText = chartHistory.length
+          ? `แสดงข้อมูลจริง ${chartHistory.length} จุดจากฐานข้อมูล อัปเดต ${new Date().toLocaleTimeString('th-TH')}`
+          : 'ยังไม่มีข้อมูลในช่วงเวลาที่เลือก ข้อมูลจะแสดงเมื่อบันทึกลงฐานข้อมูลแล้ว';
+      } catch (error) {
+        console.error('[Historical Chart] Could not load readings:', error);
+        status.innerText = `โหลดข้อมูลย้อนหลังไม่สำเร็จ: ${error.message}`;
+      }
+    }
+
+    function renderHistoricalChart() {
+      if (!chartInstance) return;
+
+      const parameter = AppState.chartParam;
+      const threshold = AppState.thresholds[parameter];
+      const timestampOptions = AppState.chartRange === '7d'
+        ? { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }
+        : { hour: '2-digit', minute: '2-digit' };
+      const readings = chartHistory.filter(reading => Number.isFinite(Date.parse(reading.ts)));
+      const labels = readings.map(reading => new Date(reading.ts).toLocaleString('th-TH', timestampOptions));
+      const values = readings.map(reading => (
+        reading.sensorOk?.[parameter] !== false && Number.isFinite(reading[parameter])
+          ? reading[parameter]
+          : null
+      ));
+
+      chartInstance.data.labels = labels;
+      chartInstance.data.datasets[0].data = values;
+      chartInstance.data.datasets[1].data = labels.map(() => threshold.max);
+      chartInstance.data.datasets[2].data = labels.map(() => threshold.min ?? null);
+      chartInstance.update();
+    }
+
+    function setChartParam(param) {
+      AppState.chartParam = param;
+      ['temp', 'ph', 'tds'].forEach(p => {
+        const btn = document.getElementById(`chart-btn-${p}`);
+        if (p === param) {
+          btn.className = "px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold";
+        } else {
+          btn.className = "px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800 dark:text-slate-400";
+        }
+      });
+
+      // Update Dataset Label & Range lines
+      let label = "อุณหภูมิน้ำ (°C)";
+      let color = "#06b6d4";
+
+      if (param === 'ph') { label = "ความเป็นกรด-ด่าง (pH)"; color = "#06b6d4"; }
+      if (param === 'tds') { label = "สารละลาย TDS (ppm)"; color = "#6366f1"; }
+      chartInstance.data.datasets[0].label = label;
+      chartInstance.data.datasets[0].borderColor = color;
+      renderHistoricalChart();
+    }
+
+    async function setChartRange(range) {
+      AppState.chartRange = range;
+      ['1h', '24h', '7d'].forEach(r => {
+        const btn = document.getElementById(`range-btn-${r}`);
+        if (r === range) {
+          btn.className = "px-2 py-1 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold";
+        } else {
+          btn.className = "px-2 py-1 rounded-md text-slate-500 hover:text-slate-800 dark:text-slate-400";
+        }
+      });
+      lastChartHistoryFetchAt = 0;
+      await loadHistoricalReadings();
+      showToast(`เปลี่ยนช่วงเวลากราฟเป็น ${range}`, 'cyan');
+    }
+
+    // Navigation Switcher
+    function switchTab(tabId) {
+      AppState.currentTab = tabId;
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      // Update Desktop Nav styles
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.className = "nav-item w-full flex items-center justify-center lg:justify-start space-x-3 px-2 lg:px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50";
+      });
+      const activeDesktop = document.getElementById(`nav-desktop-${tabId}`);
+      if (activeDesktop) {
+        activeDesktop.className = "nav-item w-full flex items-center justify-center lg:justify-start space-x-3 px-2 lg:px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 bg-cyan-50 text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-300";
+      }
+
+      // Update Mobile Nav styles
+      ['dashboard', 'alerts', 'thresholds', 'settings'].forEach(id => {
+        const mBtn = document.getElementById(`nav-mobile-${id}`);
+        if (id === tabId) {
+          mBtn.className = "flex flex-col items-center justify-center p-1.5 rounded-xl text-cyan-600 dark:text-cyan-400 min-w-[56px] min-h-[48px]";
+        } else {
+          mBtn.className = "flex flex-col items-center justify-center p-1.5 rounded-xl text-slate-500 dark:text-slate-400 min-w-[56px] min-h-[48px]";
+        }
+      });
+
+      lucide.createIcons();
+    }
+
+    // Render Tables (Alerts & Commands)
+    function renderAlertsTable() {
+      const tbodyFull = document.getElementById('alerts-full-tbody');
+      const tbodyDash = document.getElementById('dashboard-alerts-tbody');
+      tbodyFull.innerHTML = '';
+      tbodyDash.innerHTML = '';
+
+      const paramFilter = document.getElementById('filter-alert-param') ? document.getElementById('filter-alert-param').value : "ALL";
+      const typeFilter = document.getElementById('filter-alert-type') ? document.getElementById('filter-alert-type').value : "ALL";
+      const ackFilter = document.getElementById('filter-alert-ack') ? document.getElementById('filter-alert-ack').value : "ALL";
+
+      const filtered = AppState.alerts.filter(a => {
+        if (paramFilter !== "ALL" && a.parameter !== paramFilter) return false;
+        if (typeFilter !== "ALL" && a.type !== typeFilter) return false;
+        if (ackFilter !== "ALL" && a.acknowledged.toString() !== ackFilter) return false;
+        return true;
+      });
+
+      filtered.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.className = a.acknowledged ? "opacity-60" : "font-medium";
+
+        let typeBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">${a.type}</span>`;
+        if (a.type === 'LOW') typeBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300">LOW</span>`;
+        if (a.type === 'SENSOR_ERROR') typeBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">SENSOR_ERROR</span>`;
+        if (a.type === 'OFFLINE') typeBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">OFFLINE</span>`;
+
+        tr.innerHTML = `
+          <td class="py-3 font-mono text-slate-500">${new Date(a.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</td>
+          <td class="py-3 font-semibold uppercase text-slate-900 dark:text-white">${a.parameter}</td>
+          <td class="py-3 font-mono">${a.value}</td>
+          <td class="py-3 text-slate-400 font-mono">${a.thresholdMin || '-'} - ${a.thresholdMax || '-'}</td>
+          <td class="py-3">${typeBadge}</td>
+          <td class="py-3 ${a.notifyStatus === 'sent' || a.notifySent ? 'text-emerald-600 dark:text-emerald-400' : a.notifyStatus === 'failed' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}">
+            ${a.notifyStatus === 'sent' || a.notifySent ? 'ส่งแล้ว' : a.notifyStatus === 'failed' ? 'ส่งไม่สำเร็จ' : a.notifyStatus === 'disabled' ? 'ปิดใช้งาน' : 'รอส่ง'}
+          </td>
+          <td class="py-3 text-right">
+            ${a.acknowledged 
+              ? `<span class="text-xs text-slate-400">รับทราบแล้ว</span>` 
+              : `<button onclick="ackAlert('${a.id}')" class="px-3 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 font-semibold text-xs transition">รับทราบ</button>`
+            }
+          </td>
+        `;
+        tbodyFull.appendChild(tr);
+      });
+
+      // Render top 5 in dashboard
+      AppState.alerts.slice(0, 5).forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2.5 font-mono text-slate-500">${new Date(a.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+          <td class="py-2.5 font-semibold uppercase text-slate-900 dark:text-white">${a.parameter}</td>
+          <td class="py-2.5 font-mono">${a.value}</td>
+          <td class="py-2.5 text-slate-400 font-mono">${a.thresholdMin || '-'} - ${a.thresholdMax || '-'}</td>
+          <td class="py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">${a.type}</span></td>
+          <td class="py-2.5 text-right">
+            ${a.acknowledged 
+              ? `<span class="text-[11px] text-slate-400">เรียบร้อย</span>`
+              : `<button onclick="ackAlert('${a.id}')" class="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-700 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 font-semibold text-[11px]">รับทราบ</button>`
+            }
+          </td>
+        `;
+        tbodyDash.appendChild(tr);
+      });
+
+      document.getElementById('summary-alerts-today').innerText = `${AppState.alerts.length} รายการ`;
+      document.getElementById('summary-alerts-unack').innerText = `${AppState.alerts.filter(a => !a.acknowledged).length} รายการ`;
+      const telegramAttempts = AppState.alerts.filter(a => ['sent', 'failed'].includes(a.notifyStatus));
+      const telegramSent = telegramAttempts.filter(a => a.notifyStatus === 'sent').length;
+      document.getElementById('summary-alerts-telegram').innerText = telegramAttempts.length
+        ? `${Math.round((telegramSent / telegramAttempts.length) * 100)}%`
+        : '--';
+      lucide.createIcons();
+    }
+
+    async function ackAlert(id) {
+      try {
+        const response = await dashboardFetch(`/api/alerts/${encodeURIComponent(id)}/ack`, { method: 'PATCH' });
+        const result = await response.json();
+        if (!response.ok || !result.success || !result.data) {
+          throw new Error(result.error || `HTTP ${response.status}`);
+        }
+        const index = AppState.alerts.findIndex(alert => alert.id === id);
+        if (index >= 0) {
+          AppState.alerts[index] = { ...result.data, ts: new Date(result.data.ts) };
+        }
+        renderAlertsTable();
+        updateUI();
+        showToast("บันทึกการรับทราบแล้ว", "emerald");
+      } catch (error) {
+        console.error('[Alerts] Could not acknowledge alert:', error);
+        showToast(`บันทึกการรับทราบไม่สำเร็จ: ${error.message}`, "rose");
+      }
+    }
+
+    async function acknowledgeAllAlerts() {
+      try {
+        const response = await dashboardFetch('/api/alerts/acknowledge-all', { method: 'PATCH' });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || `HTTP ${response.status}`);
+        }
+        AppState.alerts.forEach(alert => {
+          alert.acknowledged = true;
+          alert.acknowledgedAt = new Date().toISOString();
+        });
+        renderAlertsTable();
+        updateUI();
+        showToast(`บันทึกรับทราบ ${result.count} รายการแล้ว`, "emerald");
+      } catch (error) {
+        console.error('[Alerts] Could not acknowledge all alerts:', error);
+        showToast(`บันทึกรับทราบทั้งหมดไม่สำเร็จ: ${error.message}`, "rose");
+      }
+    }
+
+    function exportAlertsCSV() {
+      let csv = "Timestamp,Parameter,Value,Threshold_Min,Threshold_Max,Type,Message,Acknowledged,Telegram_Sent\n";
+      AppState.alerts.forEach(a => {
+        csv += `"${a.ts.toISOString()}","${a.parameter}",${a.value},${a.thresholdMin || ''},${a.thresholdMax || ''},"${a.type}","${a.message}",${a.acknowledged},${a.notifySent}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `aquarium_alerts_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว", "cyan");
+    }
+
+    // Thresholds Save / Reset
+    function saveThresholds() {
+      const readNumber = id => {
+        const value = document.getElementById(id).value.trim();
+        return value === "" ? Number.NaN : Number(value);
+      };
+      const values = {
+        ph: { min: readNumber('thresh-ph-min'), max: readNumber('thresh-ph-max'), hysteresis: readNumber('thresh-ph-hysteresis'), cooldown: readNumber('thresh-ph-cool'), range: [0, 14] },
+        temp: { min: readNumber('thresh-temp-min'), max: readNumber('thresh-temp-max'), hysteresis: readNumber('thresh-temp-hysteresis'), cooldown: readNumber('thresh-temp-cool'), range: [0, 50] },
+        tds: { min: readNumber('thresh-tds-min'), max: readNumber('thresh-tds-max'), hysteresis: readNumber('thresh-tds-hysteresis'), cooldown: readNumber('thresh-tds-cool'), range: [0, 2000] }
+      };
+
+      for (const [parameter, threshold] of Object.entries(values)) {
+        const min = threshold.min;
+        if (!Number.isFinite(threshold.max) || (min !== null && !Number.isFinite(min)) ||
+            !Number.isFinite(threshold.hysteresis) || !Number.isFinite(threshold.cooldown) ||
+            (min !== null && min >= threshold.max) ||
+            (min !== null && (min < threshold.range[0] || min > threshold.range[1])) ||
+            threshold.max < threshold.range[0] || threshold.max > threshold.range[1] ||
+            threshold.hysteresis < 0 || threshold.cooldown < 0) {
+          showToast(`ค่า ${parameter.toUpperCase()} ไม่ถูกต้อง: ตรวจช่วงค่า, Min < Max, Hysteresis และ Cooldown`, "rose");
+          return;
+        }
+      }
+
+      Object.entries(values).forEach(([parameter, threshold]) => {
+        AppState.thresholds[parameter].min = threshold.min;
+        AppState.thresholds[parameter].max = threshold.max;
+        AppState.thresholds[parameter].hysteresis = threshold.hysteresis;
+        AppState.thresholds[parameter].cooldown = threshold.cooldown;
+      });
+      setChartParam(AppState.chartParam);
+      showToast("บันทึกเกณฑ์การแจ้งเตือนสำเร็จ", "cyan");
+      updateUI();
+    }
+
+    function resetThresholdsDefault() {
+      document.getElementById('thresh-ph-min').value = 6.5;
+      document.getElementById('thresh-ph-max').value = 8.0;
+      document.getElementById('thresh-ph-hysteresis').value = 0.1;
+      document.getElementById('thresh-temp-min').value = 24.0;
+      document.getElementById('thresh-temp-max').value = 30.0;
+      document.getElementById('thresh-temp-hysteresis').value = 0.5;
+      document.getElementById('thresh-tds-min').value = 100;
+      document.getElementById('thresh-tds-max').value = 400;
+      document.getElementById('thresh-tds-hysteresis').value = 10;
+      saveThresholds();
+      showToast("รีเซ็ตเกณฑ์กลับเป็นค่ามาตรฐานแล้ว", "emerald");
+    }
+
+    // Telegram & Settings
+    async function loadTelegramSettings() {
+      try {
+        const response = await dashboardFetch('/api/settings');
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || `HTTP ${response.status}`);
+        }
+
+        const settings = result.data;
+        document.getElementById('input-tg-chatid').value = settings.telegramChatId || '';
+        document.getElementById('input-tg-token').placeholder = settings.telegramBotTokenConfigured
+          ? 'ตั้งค่า Token แล้ว (กรอกใหม่เมื่อต้องการเปลี่ยน)'
+          : 'ใส่ Token จาก BotFather';
+        document.getElementById('tg-enabled').checked = settings.telegramEnabled === true;
+        const enabledTypes = settings.telegramNotificationTypes || [];
+        document.getElementById('tg-type-low').checked = enabledTypes.includes('LOW');
+        document.getElementById('tg-type-high').checked = enabledTypes.includes('HIGH');
+        document.getElementById('tg-type-sensor-error').checked = enabledTypes.includes('SENSOR_ERROR');
+        document.getElementById('tg-type-offline').checked = enabledTypes.includes('OFFLINE');
+        document.getElementById('tg-config-status').innerText = settings.telegramBotTokenConfigured
+          ? 'ตั้งค่า Bot Token แล้ว (ระบบไม่แสดง Token เพื่อความปลอดภัย)'
+          : 'ยังไม่ได้ตั้งค่า Bot Token';
+      } catch (error) {
+        console.error('[Telegram] Could not load settings:', error);
+        document.getElementById('tg-config-status').innerText = 'โหลดการตั้งค่าไม่สำเร็จ กรุณาตรวจสอบ Backend';
+      }
+    }
+
+    async function saveTelegramSettings(showSuccessToast = true) {
+      const notificationTypes = ['LOW', 'HIGH', 'SENSOR_ERROR', 'OFFLINE'].filter(type => {
+        const ids = {
+          LOW: 'tg-type-low',
+          HIGH: 'tg-type-high',
+          SENSOR_ERROR: 'tg-type-sensor-error',
+          OFFLINE: 'tg-type-offline'
+        };
+        return document.getElementById(ids[type]).checked;
+      });
+
+      try {
+        const response = await dashboardFetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            telegramBotToken: document.getElementById('input-tg-token').value,
+            telegramChatId: document.getElementById('input-tg-chatid').value,
+            telegramEnabled: document.getElementById('tg-enabled').checked,
+            telegramNotificationTypes: notificationTypes
+          })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || `HTTP ${response.status}`);
+        }
+
+        document.getElementById('input-tg-token').value = '';
+        await loadTelegramSettings();
+        if (showSuccessToast) showToast('บันทึกการตั้งค่า Telegram สำเร็จ', 'cyan');
+        return true;
+      } catch (error) {
+        console.error('[Telegram] Could not save settings:', error);
+        showToast(`บันทึกการตั้งค่าไม่สำเร็จ: ${error.message}`, 'rose');
+        return false;
+      }
+    }
+
+    async function testTelegramMessage() {
+      if (!await saveTelegramSettings(false)) return;
+      showToast('กำลังส่งข้อความทดสอบไปยัง Telegram...', 'sky');
+      try {
+        const response = await dashboardFetch('/api/settings/test-telegram', { method: 'POST' });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || `HTTP ${response.status}`);
+        }
+        showToast('ส่งข้อความทดสอบไปยัง Telegram สำเร็จ', 'emerald');
+      } catch (error) {
+        console.error('[Telegram] Test message failed:', error);
+        showToast(`ส่งข้อความทดสอบไม่สำเร็จ: ${error.message}`, 'rose');
+      }
+    }
+
+    // Theme Toggle
+    function toggleTheme() {
+      AppState.darkMode = !AppState.darkMode;
+      if (AppState.darkMode) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('theme-icon-sun').classList.remove('hidden');
+        document.getElementById('theme-icon-moon').classList.add('hidden');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.getElementById('theme-icon-sun').classList.add('hidden');
+        document.getElementById('theme-icon-moon').classList.remove('hidden');
+      }
+      if (chartInstance) {
+        chartInstance.update();
+      }
+    }
+
+    // ==========================================
+    // WEB SERIAL API INTEGRATION (Direct USB ESP32)
+    // ==========================================
+    let webSerialPort = null;
+    let webSerialReader = null;
+    let webSerialKeepReading = false;
+
+    async function toggleWebSerial() {
+      if (webSerialPort) {
+        // Disconnect
+        webSerialKeepReading = false;
+        try {
+          if (webSerialReader) {
+            await webSerialReader.cancel();
+          }
+          await webSerialPort.close();
+        } catch (e) {
+          console.warn("Serial close:", e);
+        }
+        webSerialPort = null;
+        webSerialReader = null;
+        updateWebSerialBadge(false);
+        showToast("ตัดการเชื่อมต่อ USB Serial แล้ว", "slate");
+        return;
+      }
+
+      if (!("serial" in navigator)) {
+        showToast("เบราว์เซอร์นี้ไม่รองรับ Web Serial กรุณาใช้ Chrome/Edge หรือรัน python serial_bridge.py", "rose");
+        return;
+      }
+
+      try {
+        webSerialPort = await navigator.serial.requestPort();
+        await webSerialPort.open({ baudRate: 115200 });
+        webSerialKeepReading = true;
+        updateWebSerialBadge(true);
+        showToast("เชื่อมต่อบอร์ด ESP32 สำเร็จ! กำลังดึงข้อมูลจริง...", "emerald");
+
+        readWebSerialStream();
+      } catch (err) {
+        console.error("Web Serial Error:", err);
+        webSerialPort = null;
+        updateWebSerialBadge(false);
+        if (err.name !== "NotFoundError") {
+          showToast("เชื่อมต่อ USB ไม่สำเร็จ: " + err.message, "rose");
+        }
+      }
+    }
+
+    function updateWebSerialBadge(connected) {
+      const dot = document.getElementById('web-serial-dot');
+      const txt = document.getElementById('web-serial-text');
+      if (connected) {
+        dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+        txt.innerText = "🟢 ต่อ USB อยู่";
+      } else {
+        dot.className = "w-2 h-2 rounded-full bg-slate-400";
+        txt.innerText = "🔌 ต่อ USB ESP32";
+      }
+    }
+
+    async function readWebSerialStream() {
+      const textDecoder = new TextDecoderStream();
+      const readableStreamClosed = webSerialPort.readable.pipeTo(textDecoder.writable);
+      const reader = textDecoder.readable.getReader();
+      webSerialReader = reader;
+
+      let buffer = "";
+      try {
+        while (webSerialKeepReading) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (value) {
+            buffer += value;
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // keep last incomplete line
+
+            for (const rawLine of lines) {
+              const line = rawLine.trim();
+              if (!line) continue;
+              handleIncomingSerialLine(line);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Serial read loop exited:", err);
+      } finally {
+        try { reader.releaseLock(); } catch(e) {}
+      }
+    }
+
+    function handleIncomingSerialLine(line) {
+      let parsed = null;
+
+      // แบบ JSON
+      if (line.startsWith('{') && line.endsWith('}')) {
+        try {
+          const data = JSON.parse(line);
+          parsed = {
+            temp: typeof data.temp === 'number' ? data.temp : 25.0,
+            tds: typeof data.tds === 'number' ? data.tds : 0,
+            ph: typeof data.ph === 'number' ? data.ph : 7.0,
+            tempOk: data.tempOk !== false,
+            phOk: data.phValid !== false
+          };
+        } catch (e) {}
+      }
+
+      // แบบ Text สรุปของ water_monitor.ino
+      if (!parsed && (line.includes('Temp:') || line.includes('TDS:') || line.includes('Po:'))) {
+        let temp = 25.0, tempOk = true, tds = 0, po = 2.5, ph = 7.0, phOk = true;
+        const mTemp = line.match(/Temp:\s*([\d\.\-]+)\s*C/);
+        if (mTemp) temp = parseFloat(mTemp[1]);
+        else if (line.includes('N/A')) tempOk = false;
+
+        const mTds = line.match(/TDS:\s*([\d\.\-]+)\s*ppm/);
+        if (mTds) tds = parseInt(mTds[1]);
+
+        const mPo = line.match(/Po:\s*([\d\.\-]+)\s*V/);
+        if (mPo) po = parseFloat(mPo[1]);
+
+        const mPh = line.match(/pH:\s*([\d\.\-]+)/);
+        if (mPh) ph = parseFloat(mPh[1]);
+        else if (line.includes('ยังไม่ปรับเทียบ')) {
+          ph = Math.max(0, Math.min(14, +(7.0 - (po - 2.5) * 3.5).toFixed(2)));
+        }
+
+        parsed = { temp, tds, ph, tempOk, phOk };
+      }
+
+      if (parsed) {
+        AppState.readings.temp = parsed.temp;
+        AppState.readings.tds = parsed.tds;
+        AppState.readings.ph = parsed.ph;
+        AppState.readings.sensorOk.temp = parsed.tempOk;
+        AppState.readings.sensorOk.ph = parsed.phOk;
+        AppState.readings.lastSeen = new Date();
+        AppState.readings.status = "NORMAL";
+
+        recordSparklineSample();
+        updateUI();
+
+        // ส่งต่อไปยัง Backend Server เพื่อบันทึก db.json
+        dashboardFetch('/api/readings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ph: parsed.ph,
+            temp: parsed.temp,
+            tds: parsed.tds,
+            sensorOk: { temp: parsed.tempOk, ph: parsed.phOk, tds: true, turbidity: true }
+          })
+        }).catch(error => console.error('[Serial] Could not forward sensor reading to API:', error));
+      }
+    }
+
+    // Toast UI
+    function showToast(msg, color = 'cyan') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      let bg = "bg-cyan-600 text-white";
+      if (color === 'rose') bg = "bg-rose-600 text-white";
+      if (color === 'amber') bg = "bg-amber-600 text-white";
+      if (color === 'emerald') bg = "bg-emerald-600 text-white";
+      if (color === 'slate') bg = "bg-slate-700 text-white";
+      if (color === 'sky') bg = "bg-sky-600 text-white";
+
+      toast.className = `${bg} px-4 py-2.5 rounded-2xl shadow-xl text-xs font-semibold flex items-center space-x-2 transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto`;
+      toast.innerHTML = `<span>${msg}</span>`;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>

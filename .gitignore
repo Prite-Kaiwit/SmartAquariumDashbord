@@ -1,0 +1,6 @@
+node_modules/
+.env
+db.json
+__pycache__/
+*.py[cod]
+water_monitor/secrets.h
